@@ -1,6 +1,8 @@
 package com.edf.datalake.service.kafka;
 
 import com.edf.datalake.model.KafkaTopic;
+import com.edf.datalake.model.dto.MessagesDTO;
+import com.edf.datalake.model.dto.Status;
 import com.edf.datalake.service.dao.TopicRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -52,6 +54,7 @@ public class ConsumerService {
         final String AUTO_COMMIT          = "enable.auto.commit";
         final String AUTO_COMMIT_INTERVAL = "auto.commit.interval.ms";
         final String SESSION_TIMEOUT      = "session.timeout.ms";
+        final String MAX_POLL_RECORDS     = "max.poll.records";
 
         consumers = new HashMap<>();
         jsonParser = new JSONParser();
@@ -69,6 +72,7 @@ public class ConsumerService {
         config.put(TRUSTSTORE_PASSWORD, env.getProperty(TRUSTSTORE_PASSWORD));
         config.put(AUTO_COMMIT, env.getProperty(AUTO_COMMIT));
         config.put(AUTO_COMMIT_INTERVAL, env.getProperty(AUTO_COMMIT_INTERVAL));
+        config.put(MAX_POLL_RECORDS, env.getProperty(MAX_POLL_RECORDS));
         config.put(SESSION_TIMEOUT, env.getProperty(SESSION_TIMEOUT));
         config.put(KEY_DESERIALIZER, env.getProperty(KEY_DESERIALIZER));
         config.put(VALUE_DESERIALIZER, env.getProperty(VALUE_DESERIALIZER));
@@ -83,32 +87,33 @@ public class ConsumerService {
         }
     }
 
-    public List<JSONObject> getMessages(String topic) {
+    public MessagesDTO getMessages(String topic) {
         KafkaConsumer consumer = consumers.get(topic);
-        List<JSONObject> results = new ArrayList<>();
+        List<JSONObject> events = new ArrayList<>();
+        MessagesDTO result;
 
         try {
-
             ConsumerRecords<String, String> records = consumer.poll( Long.valueOf(env.getProperty(POLL_TME)) );
 
             for (ConsumerRecord<String, String> record : records) {
-                logger.info(record.value());
-
-                JSONObject result = (JSONObject) jsonParser.parse(record.value());
-                results.add( result );
-
-                logger.info("Entry : " + result.toJSONString());
+                JSONObject event = (JSONObject) jsonParser.parse(record.value());
+                events.add( event );
             }
+
+            result = new MessagesDTO(Status.GRANTED, events);
 
         } catch (WakeupException e) {
             logger.error(e.getMessage());
+            result = new MessagesDTO(Status.BUSY_ERROR, events);
         } catch (ConcurrentModificationException e) {
             logger.error("Im fucking busy");
+            result = new MessagesDTO(Status.BUSY_ERROR, events);
         } catch (ParseException e) {
             logger.error("Impossible to parse entry to JSON");
+            result = new MessagesDTO(Status.PARSE_ERROR, events);
         }
 
-        return results;
+        return result;
     }
 
     @PreDestroy

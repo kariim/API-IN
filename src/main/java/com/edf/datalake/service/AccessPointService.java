@@ -2,6 +2,7 @@ package com.edf.datalake.service;
 
 import com.edf.datalake.model.ApiKey;
 import com.edf.datalake.model.KafkaTopic;
+import com.edf.datalake.model.dto.MessagesDTO;
 import com.edf.datalake.service.dao.ApiKeyRepository;
 import com.edf.datalake.service.kafka.ConsumerService;
 import org.json.simple.JSONObject;
@@ -22,7 +23,7 @@ public class AccessPointService {
 
     private Logger logger = LoggerFactory.getLogger(AccessPointService.class);
 
-    public List<JSONObject> getCurrentMessages(String topic) {
+    public MessagesDTO getCurrentMessages(String topic) {
         logger.info("Getting messages for topic : " + topic);
         return consumer.getMessages(topic);
     }

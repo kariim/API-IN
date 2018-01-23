@@ -1,5 +1,7 @@
 package com.edf.datalake.controller;
 
+import com.edf.datalake.model.dto.MessagesDTO;
+import com.edf.datalake.model.dto.Status;
 import com.edf.datalake.service.AccessPointService;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -10,11 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api-out")
-public class ApiInController {
+public class ApiOutController {
 
     @Autowired
     private AccessPointService accessPointService;
@@ -22,7 +25,7 @@ public class ApiInController {
     @Autowired
     private Environment env;
 
-    private Logger logger = LoggerFactory.getLogger(ApiInController.class);
+    private Logger logger = LoggerFactory.getLogger(ApiOutController.class);
     private static final String TOPIC_PREFIX = "topic.prefix";
 
     @GetMapping(path = "/messages/{topic}", produces = "application/json")
@@ -30,18 +33,28 @@ public class ApiInController {
 
         String fullTopic = env.getProperty(TOPIC_PREFIX) + topic;
         Boolean granted = accessPointService.checkPrerequisites(fullTopic, apiKey);
-        List<JSONObject> results = null;
+        MessagesDTO results;
 
         if(granted) {
-
-            logger.info("GRANTED");
-
             results = accessPointService.getCurrentMessages(fullTopic);
-            return new ResponseEntity<>(results, HttpStatus.OK);
+
+            if( Status.GRANTED.equals(results.status) ) {
+                return new ResponseEntity<>(results.messages, HttpStatus.OK);
+            }
+
+            if( Status.BUSY_ERROR.equals(results.status) ) {
+                return new ResponseEntity<>(results.messages, HttpStatus.CONFLICT);
+            }
+
+            if( Status.PARSE_ERROR.equals(results.status) ) {
+                return new ResponseEntity<>(results.messages, HttpStatus.FORBIDDEN);
+            }
+
+            return new ResponseEntity<>(results.messages, HttpStatus.NO_CONTENT);
 
         } else {
             logger.info("NOT GRANTED");
-            return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.BAD_REQUEST);
         }
     }
 
