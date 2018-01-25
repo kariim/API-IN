@@ -91,6 +91,16 @@ public class ConsumerService {
         }
 
         logger.info("Initialization successfully completed !");
+        logger.info("Configuration Tree is as follow :");
+
+        for(Map.Entry<String, Map<String, KafkaConsumer>> entryOne : consumers.entrySet()) {
+            logger.info("API KEY : " + entryOne.getKey());
+
+            for(Map.Entry<String, KafkaConsumer> entryTwo : entryOne.getValue().entrySet()) {
+                logger.info("\t\t TOPIC : " + entryTwo.getKey());
+            }
+        }
+
     }
 
     public MessagesDTO getMessages(String apiKey, String topic) {
