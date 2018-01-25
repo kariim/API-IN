@@ -5,12 +5,10 @@ import com.edf.datalake.model.KafkaTopic;
 import com.edf.datalake.model.dto.MessagesDTO;
 import com.edf.datalake.service.dao.ApiKeyRepository;
 import com.edf.datalake.service.kafka.ConsumerService;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.List;
 
 @Service
 public class AccessPointService {
@@ -23,9 +21,9 @@ public class AccessPointService {
 
     private Logger logger = LoggerFactory.getLogger(AccessPointService.class);
 
-    public MessagesDTO getCurrentMessages(String topic) {
-        logger.info("Getting messages for topic : " + topic);
-        return consumer.getMessages(topic);
+    public MessagesDTO getCurrentMessages(String apiKey, String topic) {
+        logger.info("Getting messages for Api Key : " + apiKey + " And Topic :" + topic);
+        return consumer.getMessages(apiKey, topic);
     }
 
     public Boolean checkPrerequisites(String topic, String apiKey) {

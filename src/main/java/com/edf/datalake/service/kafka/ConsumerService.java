@@ -1,9 +1,10 @@
 package com.edf.datalake.service.kafka;
 
+import com.edf.datalake.model.ApiKey;
 import com.edf.datalake.model.KafkaTopic;
 import com.edf.datalake.model.dto.MessagesDTO;
 import com.edf.datalake.model.dto.Status;
-import com.edf.datalake.service.dao.TopicRepository;
+import com.edf.datalake.service.dao.ApiKeyRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -18,7 +19,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.*;
 
 
@@ -29,9 +29,9 @@ public class ConsumerService {
     private Environment env;
 
     @Autowired
-    private TopicRepository repository;
+    private ApiKeyRepository repository;
 
-    private Map<String, KafkaConsumer> consumers;
+    private Map<String, Map<String, KafkaConsumer>> consumers;
     private Logger logger = LoggerFactory.getLogger(ConsumerService.class);
     private String POLL_TME = "poll.time";
     private JSONParser jsonParser;
@@ -42,7 +42,6 @@ public class ConsumerService {
 
         final String SECURITY_LOGIN       = "java.security.auth.login.config";
         final String SECURITY_KRB5        = "java.security.krb5.conf";
-        final String CLIENT_ID            = "client.id";
         final String BOOTSTRAP_SERVERS    = "bootstrap.servers";
         final String ZOOKEEPER            = "zookeeper";
         final String GROUP_ID             = "group.id";
@@ -64,7 +63,6 @@ public class ConsumerService {
         System.setProperty(SECURITY_LOGIN, env.getProperty(SECURITY_LOGIN));
         System.setProperty(SECURITY_KRB5, env.getProperty(SECURITY_KRB5));
 
-        config.put(CLIENT_ID, env.getProperty(CLIENT_ID));
         config.put(BOOTSTRAP_SERVERS, env.getProperty(BOOTSTRAP_SERVERS));
         config.put(ZOOKEEPER, env.getProperty(ZOOKEEPER));
         config.put(SECURITY_PROTOCOL, env.getProperty(SECURITY_PROTOCOL));
@@ -77,18 +75,22 @@ public class ConsumerService {
         config.put(KEY_DESERIALIZER, env.getProperty(KEY_DESERIALIZER));
         config.put(VALUE_DESERIALIZER, env.getProperty(VALUE_DESERIALIZER));
 
-        for(KafkaTopic topic : repository.findAll()) {
-            config.put(GROUP_ID, "None");
-            KafkaConsumer consumer = new KafkaConsumer<String, String>(config);
-            logger.info("TOPIC : " + topic.getId());
-            consumer.subscribe(Arrays.asList( topic.getId() ));
 
-            consumers.put(topic.getId(), consumer);
+        for(ApiKey apiKey : repository.findAll()) {
+            consumers.put( apiKey.getId(), new HashMap<>() );
+
+            for (KafkaTopic topic : apiKey.getTopics()) {
+                config.put(GROUP_ID, topic.getId() + apiKey.getId());
+                KafkaConsumer consumer = new KafkaConsumer<String, String>(config);
+
+                consumer.subscribe(Arrays.asList( topic.getId() ));
+                consumers.get(apiKey.getId()).put(topic.getId(), consumer);
+            }
         }
     }
 
-    public MessagesDTO getMessages(String topic) {
-        KafkaConsumer consumer = consumers.get(topic);
+    public MessagesDTO getMessages(String apiKey, String topic) {
+        KafkaConsumer consumer = consumers.get(apiKey).get(topic);
         List<JSONObject> events = new ArrayList<>();
         MessagesDTO result;
 
@@ -114,13 +116,6 @@ public class ConsumerService {
         }
 
         return result;
-    }
-
-    @PreDestroy
-    public void cleanup() {
-        for(Map.Entry<String, KafkaConsumer> entry : consumers.entrySet()) {
-            entry.getValue().close();
-        }
     }
 
 }

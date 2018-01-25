@@ -12,7 +12,7 @@ public class ApiKey {
     @Column(name = "client_key")
     private String id;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(name = "authorized_api_keys_topics",
             joinColumns = @JoinColumn(name = "client_key", referencedColumnName = "client_key"),
             inverseJoinColumns = @JoinColumn(name = "url_suffix", referencedColumnName = "url_suffix"))

@@ -36,7 +36,7 @@ public class ApiOutController {
         MessagesDTO results;
 
         if(granted) {
-            results = accessPointService.getCurrentMessages(fullTopic);
+            results = accessPointService.getCurrentMessages(apiKey, fullTopic);
 
             if( Status.GRANTED.equals(results.status) ) {
                 return new ResponseEntity<>(results.messages, HttpStatus.OK);
