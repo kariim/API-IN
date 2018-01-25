@@ -22,7 +22,6 @@ public class AccessPointService {
     private Logger logger = LoggerFactory.getLogger(AccessPointService.class);
 
     public MessagesDTO getCurrentMessages(String apiKey, String topic) {
-        logger.info("Getting messages for Api Key : " + apiKey + " And Topic :" + topic);
         return consumer.getMessages(apiKey, topic);
     }
 

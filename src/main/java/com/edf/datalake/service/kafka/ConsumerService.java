@@ -40,6 +40,8 @@ public class ConsumerService {
     @PostConstruct
     public void initConsumers() {
 
+        logger.info("Begin initialization process !");
+
         final String SECURITY_LOGIN       = "java.security.auth.login.config";
         final String SECURITY_KRB5        = "java.security.krb5.conf";
         final String BOOTSTRAP_SERVERS    = "bootstrap.servers";
@@ -87,6 +89,8 @@ public class ConsumerService {
                 consumers.get(apiKey.getId()).put(topic.getId(), consumer);
             }
         }
+
+        logger.info("Initialization successfully completed !");
     }
 
     public MessagesDTO getMessages(String apiKey, String topic) {

@@ -13,19 +13,4 @@ public class ServletInitializer extends SpringBootServletInitializer {
 		return application.sources(ApiInApplication.class);
 	}
 
-	@Bean
-	public UndertowEmbeddedServletContainerFactory embeddedServletContainerFactory() {
-		UndertowEmbeddedServletContainerFactory factory =
-				new UndertowEmbeddedServletContainerFactory();
-
-		factory.addBuilderCustomizers(new UndertowBuilderCustomizer() {
-			@Override
-			public void customize(io.undertow.Undertow.Builder builder) {
-				builder.addHttpListener(8083, "localhost");
-			}
-		});
-
-		return factory;
-	}
-
 }
