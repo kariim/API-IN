@@ -16,10 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 @Service
@@ -31,7 +33,7 @@ public class ConsumerService {
     @Autowired
     private ApiKeyRepository repository;
 
-    private Map<String, Map<String, KafkaConsumer>> consumers;
+    private ConcurrentHashMap<String, ConcurrentHashMap<String, ConsumerExecutor>> consumers;
     private Logger logger = LoggerFactory.getLogger(ConsumerService.class);
     private String POLL_TME = "poll.time";
     private JSONParser jsonParser;
@@ -56,8 +58,9 @@ public class ConsumerService {
         final String AUTO_COMMIT_INTERVAL = "auto.commit.interval.ms";
         final String SESSION_TIMEOUT      = "session.timeout.ms";
         final String MAX_POLL_RECORDS     = "max.poll.records";
+        final String POOL_CONSUMER_SIZE   = "pool.consumer.size";
 
-        consumers = new HashMap<>();
+        consumers = new ConcurrentHashMap<>();
         jsonParser = new JSONParser();
 
         Properties config = new Properties();
@@ -79,24 +82,28 @@ public class ConsumerService {
 
 
         for(ApiKey apiKey : repository.findAll()) {
-            consumers.put( apiKey.getId(), new HashMap<>() );
+            consumers.put( apiKey.getId(), new ConcurrentHashMap<>() );
 
             for (KafkaTopic topic : apiKey.getTopics()) {
                 config.put(GROUP_ID, topic.getId() + apiKey.getId());
-                KafkaConsumer consumer = new KafkaConsumer<String, String>(config);
+                consumers.get(apiKey.getId()).put(topic.getId(), new ConsumerExecutor());
 
-                consumer.subscribe(Arrays.asList( topic.getId() ));
-                consumers.get(apiKey.getId()).put(topic.getId(), consumer);
+                for(int i=0; i<Integer.valueOf(env.getProperty(POOL_CONSUMER_SIZE)); i++) {
+                    KafkaConsumer consumer = new KafkaConsumer<String, String>(config);
+                    consumer.subscribe(Arrays.asList( topic.getId() ));
+
+                    consumers.get(apiKey.getId()).get(topic.getId()).addConsumer(consumer);
+                }
             }
         }
 
         logger.info("Initialization successfully completed !");
         logger.info("Configuration Tree is as follow :");
 
-        for(Map.Entry<String, Map<String, KafkaConsumer>> entryOne : consumers.entrySet()) {
+        for(ConcurrentHashMap.Entry<String, ConcurrentHashMap<String, ConsumerExecutor>> entryOne : consumers.entrySet()) {
             logger.info("API KEY : " + entryOne.getKey());
 
-            for(Map.Entry<String, KafkaConsumer> entryTwo : entryOne.getValue().entrySet()) {
+            for(Map.Entry<String, ConsumerExecutor> entryTwo : entryOne.getValue().entrySet()) {
                 logger.info("\t\t TOPIC : " + entryTwo.getKey());
             }
         }
@@ -104,30 +111,33 @@ public class ConsumerService {
     }
 
     public MessagesDTO getMessages(String apiKey, String topic) {
-        KafkaConsumer consumer = consumers.get(apiKey).get(topic);
+        ConsumerRecords<String, String> records = consumers.get(apiKey).get(topic).
+                getConsumer(Long.valueOf(env.getProperty(POLL_TME)));
+
         List<JSONObject> events = new ArrayList<>();
         MessagesDTO result;
 
         try {
-            ConsumerRecords<String, String> records = consumer.poll( Long.valueOf(env.getProperty(POLL_TME)) );
 
             for (ConsumerRecord<String, String> record : records) {
                 JSONObject event = (JSONObject) jsonParser.parse(record.value());
-                events.add( event );
+                events.add(event);
             }
 
             result = new MessagesDTO(Status.GRANTED, events);
 
         } catch (WakeupException e) {
             logger.error(e.getMessage());
-            result = new MessagesDTO(Status.BUSY_ERROR, events);
+            result = new MessagesDTO(Status.BUSY_ERROR, null);
         } catch (ConcurrentModificationException e) {
             logger.error("Im fucking busy");
-            result = new MessagesDTO(Status.BUSY_ERROR, events);
+            result = new MessagesDTO(Status.BUSY_ERROR, null);
         } catch (ParseException e) {
             logger.error("Impossible to parse entry to JSON");
             result = new MessagesDTO(Status.PARSE_ERROR, events);
         }
+
+
 
         return result;
     }

@@ -8,6 +8,7 @@ import com.edf.datalake.service.kafka.ConsumerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,6 +22,7 @@ public class AccessPointService {
 
     private Logger logger = LoggerFactory.getLogger(AccessPointService.class);
 
+    @Async
     public MessagesDTO getCurrentMessages(String apiKey, String topic) {
         return consumer.getMessages(apiKey, topic);
     }
