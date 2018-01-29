@@ -19,7 +19,7 @@ public class ConsumerExecutor {
         consumers.add(consumer);
     }
 
-    public ConsumerRecords<String, String> getConsumer(Long pollTime) {
+    public ConsumerRecords<String, String> consume(Long pollTime) {
         Iterator<KafkaConsumer> iterator = consumers.iterator();
 
         while (iterator.hasNext()) {

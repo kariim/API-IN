@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -112,7 +111,7 @@ public class ConsumerService {
 
     public MessagesDTO getMessages(String apiKey, String topic) {
         ConsumerRecords<String, String> records = consumers.get(apiKey).get(topic).
-                getConsumer(Long.valueOf(env.getProperty(POLL_TME)));
+                consume(Long.valueOf(env.getProperty(POLL_TME)));
 
         List<JSONObject> events = new ArrayList<>();
         MessagesDTO result;
@@ -127,13 +126,8 @@ public class ConsumerService {
             result = new MessagesDTO(Status.GRANTED, events);
 
         } catch (WakeupException e) {
-            logger.error(e.getMessage());
-            result = new MessagesDTO(Status.BUSY_ERROR, null);
-        } catch (ConcurrentModificationException e) {
-            logger.error("Im fucking busy");
             result = new MessagesDTO(Status.BUSY_ERROR, null);
         } catch (ParseException e) {
-            logger.error("Impossible to parse entry to JSON");
             result = new MessagesDTO(Status.PARSE_ERROR, events);
         }
 
@@ -148,7 +142,12 @@ public class ConsumerService {
         for(Map.Entry<String, ConcurrentHashMap<String, ConsumerExecutor>> entry1 : consumers.entrySet()) {
             for( Map.Entry<String, ConsumerExecutor> entry2 : entry1.getValue().entrySet() ) {
                 for(KafkaConsumer consumer : entry2.getValue().getConsumers()) {
-                    consumer.close();
+                    try {
+                        consumer.close();
+                    } catch (IllegalStateException e) {
+                        logger.error("Already closed !");
+                    }
+
                 }
             }
         }
