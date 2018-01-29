@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <!-- LOCAL
     <property name="LOG_HOME" value="/home/karim/Workspace/logs/API-OUT" />
+    -->
+
+    <!-- RE7 -->
+    <property name="LOG_HOME" value="/home/KO4A517N/API-OUT/logs" />
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">

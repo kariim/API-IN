@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api-out")
+@RequestMapping("/v1.0")
 public class ApiOutController {
 
     @Autowired
@@ -28,7 +28,7 @@ public class ApiOutController {
     private Logger logger = LoggerFactory.getLogger(ApiOutController.class);
     private static final String TOPIC_PREFIX = "topic.prefix";
 
-    @GetMapping(path = "/messages/{topic}", produces = "application/json")
+    @GetMapping(path = "/topics/{topic}", produces = "application/json")
     public ResponseEntity<List<JSONObject>> getAllMessages(@PathVariable(value = "topic") String topic, @RequestHeader("Authorization") String apiKey) {
 
         String fullTopic = env.getProperty(TOPIC_PREFIX) + topic;

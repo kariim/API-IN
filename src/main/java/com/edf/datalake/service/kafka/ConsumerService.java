@@ -131,8 +131,6 @@ public class ConsumerService {
             result = new MessagesDTO(Status.PARSE_ERROR, events);
         }
 
-
-
         return result;
     }
 
