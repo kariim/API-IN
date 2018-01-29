@@ -58,5 +58,10 @@ public class ApiOutController {
         }
     }
 
+    @GetMapping(path = "/shutdown")
+    public ResponseEntity shutdown() {
+        accessPointService.shutdown();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
 

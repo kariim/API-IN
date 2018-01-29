@@ -142,6 +142,19 @@ public class ConsumerService {
         return result;
     }
 
+    public void shutdown() {
+        logger.info("Closing Kafka Consumers");
+
+        for(Map.Entry<String, ConcurrentHashMap<String, ConsumerExecutor>> entry1 : consumers.entrySet()) {
+            for( Map.Entry<String, ConsumerExecutor> entry2 : entry1.getValue().entrySet() ) {
+                for(KafkaConsumer consumer : entry2.getValue().getConsumers()) {
+                    consumer.close();
+                }
+            }
+        }
+
+        logger.info("All Kafka consumers have been shutdown successfully !");
+    }
 }
 
 

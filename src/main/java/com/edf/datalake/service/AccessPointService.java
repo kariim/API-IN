@@ -38,4 +38,7 @@ public class AccessPointService {
         return (entity.getTopics().contains(temporaryTopic));
     }
 
+    public void shutdown() {
+        consumer.shutdown();
+    }
 }

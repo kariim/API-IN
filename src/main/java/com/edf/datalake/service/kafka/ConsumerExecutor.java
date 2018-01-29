@@ -34,4 +34,8 @@ public class ConsumerExecutor {
         // No consumer was returned ! fuck you and your heavy load !
         return null;
     }
+
+    public ConcurrentLinkedQueue<KafkaConsumer> getConsumers() {
+        return consumers;
+    }
 }
