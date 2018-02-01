@@ -1,0 +1,69 @@
+
+---------------------------------------------------------------------------------
+Procédure Installation des serveurs Tomcat en recette pour l'utilisateur KO4A517N
+---------------------------------------------------------------------------------
+
+1 - Récupérer le package tomcat depuis : C:\Users\ko4a517n\Desktop\!\Software\apache-tomcat-8.5.9.tar.gz
+
+2- Sur chaque machine, faites les actions suivantes :
+
+	- sudo su
+	- mkdir /opt/tomcat
+	- tar xvf apache-tomcat-8*tar.gz -C /opt/tomcat --strip-components=1
+	- cd /opt/tomcat
+	- chgrp -R users /opt/tomcat
+	- chmod -R g+r conf
+	- chmod g+x conf
+	- chown -R KO4A517N webapps/ work/ temp/ logs/
+
+3- Configuration du cluster Tomcat; Sur chaque machine faites :
+	- Décommenter la ligne suivante : <Connector port="8009" protocol="AJP/1.3" redirectPort="8443" />
+	- Ajouter la JVM_ROUTE dans la ligne => <Engine name="Catalina" defaultHost="localhost" jvmroute="NODE_NAME">
+	- Changer le port dans la ligne => <Connector port="8282" protocol="HTTP/1.1"
+
+
+4- Sur chaque machine, Créer le service Tomcat :
+
+	- vim /etc/systemd/system/tomcat.service
+	- Coller le contenu en dessous :
+
+	# Systemd unit file for tomcat
+			[Unit]
+			Description=Apache Tomcat Web Application Container
+			After=syslog.target network.target
+
+			[Service]
+			Type=forking
+
+			Environment=JAVA_HOME=/opt/jdk/jdk1.8.0_121_Linux_64bits/
+			Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+			Environment=CATALINA_HOME=/opt/tomcat
+			Environment=CATALINA_BASE=/opt/tomcat
+			Environment='CATALINA_OPTS=-server -Xms1g -Xmx3g -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:InitiatingHeapOccupancyPercent=50 -XX:+UseCompressedOops -XX:MaxTenuringThreshold=10 -XX:ParallelGCThreads=8 -XX:ConcGCThreads=8 -XX:G1ReservePercent=10 -XX:G1HeapRegionSize=32m'
+			Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+			ExecStart=/opt/tomcat/bin/startup.sh
+			ExecStop=/bin/kill -15 $MAINPID
+
+			User=KO4A517N
+			Group=users
+			UMask=0007
+			RestartSec=10
+			Restart=always
+
+			[Install]
+			WantedBy=multi-user.target
+
+
+5-  Rafraichissez la base System pour prendre en considération le nouveau service
+	- sudo systemctl daemon-reload
+
+6- Démarrer le service Tomcat
+	- sudo systemctl start (stop) tomcat
+
+7- Pour consulter les logs
+	- sudo tail -f /opt/tomcat/logs/catalina.out
+
+8- Pour déployer l'application
+	- Executer le script deploy-re7.sh
+	- l'URL de l'application est : http://**LOAD_BALANCER**:**80**/API-OUT-1.0/v1.0/topics/**topic_name**
