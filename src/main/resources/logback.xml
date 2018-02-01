@@ -3,7 +3,7 @@
 
     <!-- LOCAL
     <property name="LOG_HOME" value="/home/karim/Workspace/logs/API-OUT" />
-    -->
+ -->
 
     <!-- RE7 -->
     <property name="LOG_HOME" value="/home/KO4A517N/API-OUT/logs" />
