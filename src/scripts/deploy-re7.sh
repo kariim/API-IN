@@ -35,9 +35,11 @@ function setup_env() {
 		expect "password:"
 		send "$f_pass\r"
 		expect ">"
-		send "mkdir -p $f_path\r"
+		send "sudo systemctl stop tomcat\r"
+		expect "passe"
+		send "$f_pass\r"
 		expect ">"
-		send "pkill -u '$f_user' -f 'java'\r"
+		send "rm -rf $f_path/API*\r"
 		expect ">"
 		send "bye\r"
 EOD
@@ -49,26 +51,26 @@ function run_application() {
 	f_user=$1
 	f_host=$2
 	f_pass=$3
-	f_path=$4
-	f_name=$5
 
 	/usr/bin/expect << EOD
 		spawn /usr/bin/ssh $f_user@$f_host
 		expect "password:"
 		send "$f_pass\r"
 		expect ">"
-		send "java -jar $f_name -server -Xms1g -Xmx3g -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:InitiatingHeapOccupancyPercent=50 -XX:+UseCompressedOops -XX:MaxTenuringThreshold=10 -XX:ParallelGCThreads=8 -XX:ConcGCThreads=8 -XX:G1ReservePercent=10 -XX:G1HeapRegionSize=32m\r"
+		send "sudo systemctl start tomcat\r"
+		expect "passe"
+		send "$f_pass\r"
+		expect ">"
 		send "bye\r"
 EOD
 
 	echo "The Environment is sucessfully configured. Ready to start services !"
 }
 
-JAR_NAME="API-OUT-1.0.jar"
+
 PROJECT_HOME="/home/karim/Workspace/API-OUT/"
-ARTIFACT_PATH="/home/karim/Workspace/API-OUT/target/API-OUT-1.0.jar"
-TODAY=$(date +"%Y%m%d-%H%M")
-ARTIFACT_DESTINATION="/home/KO4A517N/API-OUT/$TODAY/"
+ARTIFACT_PATH="/home/karim/Workspace/API-OUT/target/API-OUT-1.0.war"
+ARTIFACT_DESTINATION="/opt/tomcat/webapps/"
 SERVERS="NOEYYPTZ.adam.adroot.edf.fr:NOEYYPU0.adam.adroot.edf.fr:NOEYYPU1.adam.adroot.edf.fr"
 LOGIN="KO4A517N"
 PASSWORD="P@ssword10.."
@@ -85,11 +87,8 @@ for (( i=0; i<${#SERVERS_AR[@]}; i++ ));
 do
 	setup_env $LOGIN ${SERVERS_AR[$i]} $PASSWORD $ARTIFACT_DESTINATION
 	send_ftp $PORT $LOGIN ${SERVERS_AR[$i]} $PASSWORD $ARTIFACT_PATH $ARTIFACT_DESTINATION
-	run_application $LOGIN ${SERVERS_AR[$i]} $PASSWORD $ARTIFACT_DESTINATION $JAR_NAME
+	run_application $LOGIN ${SERVERS_AR[$i]} $PASSWORD
 done;
 
 echo "Done !"
-
-
-
 
