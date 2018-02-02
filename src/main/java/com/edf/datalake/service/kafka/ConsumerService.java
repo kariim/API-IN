@@ -119,8 +119,7 @@ public class ConsumerService {
         try {
 
             for (ConsumerRecord<String, String> record : records) {
-                JSONObject event = (JSONObject) jsonParser.parse(record.value());
-                events.add(event);
+                events.add( parseToJson(record) );
             }
 
             result = new MessagesDTO(Status.GRANTED, events);
@@ -152,6 +151,11 @@ public class ConsumerService {
 
         logger.info("All Kafka consumers have been shutdown successfully !");
     }
+
+    synchronized JSONObject parseToJson(ConsumerRecord<String, String> record) throws WakeupException, ParseException {
+        return (JSONObject) jsonParser.parse(record.value());
+    }
+
 }
 
 
