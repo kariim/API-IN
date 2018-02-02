@@ -7,7 +7,6 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +39,6 @@ public class ApiOutController {
             results = accessPointService.getCurrentMessages(apiKey, fullTopic);
 
             if( Status.GRANTED.equals(results.status) ) {
-                logger.info("GRANTED !");
                 return new ResponseEntity<>(results.messages, HttpStatus.OK);
             }
 
